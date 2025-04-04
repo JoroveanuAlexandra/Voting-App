@@ -1,4 +1,6 @@
 from db import user_exists, save_user, fetch_user_password
+import sqlite3
+from encryption import hash_password, check_password
 from tkinter import messagebox
 
 def register_user(username, password):
@@ -10,5 +12,11 @@ def register_user(username, password):
     return True
 
 def authenticate_user(username, password):
-    stored_password = fetch_user_password(username)
-    return stored_password == password
+    conn = sqlite3.connect("voting_app.db")
+    c = conn.cursor()
+    c.execute("SELECT password FROM users WHERE username = ?", (username,))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        return check_password(password, row[0])
+    return False

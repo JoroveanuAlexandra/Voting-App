@@ -1,4 +1,5 @@
 import os, base64
+import bcrypt
 from dotenv import load_dotenv
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
@@ -8,7 +9,6 @@ key_from_env = os.environ.get("VOTING_APP_AES_KEY")
 if not key_from_env:
     raise ValueError("Encryption key not found. Please set the VOTING_APP_AES_KEY environment variable.")
 ENCRYPTION_KEY = key_from_env.encode('utf-8')
-VOTE_KEY = "my_secret_vote_key"
 
 def encrypt_data(data):
     iv = os.urandom(16)
@@ -28,8 +28,8 @@ def decrypt_data(encrypted_data):
     decrypted_data = decryptor.update(encrypted_data) + decryptor.finalize()
     return decrypted_data.rstrip(b" ").decode('utf-8')
 
-def xor_encrypt(data, key=VOTE_KEY):
-    return base64.b64encode(bytes([b ^ key.encode('utf-8')[i % len(key)] for i, b in enumerate(data.encode('utf-8'))])).decode('utf-8')
+def hash_password(password):
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-def xor_decrypt(encrypted_data, key=VOTE_KEY):
-    return bytes([b ^ key.encode('utf-8')[i % len(key)] for i, b in enumerate(base64.b64decode(encrypted_data.encode('utf-8')))]).decode('utf-8')
+def check_password(password, hashed_password):
+    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))

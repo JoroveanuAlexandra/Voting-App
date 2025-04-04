@@ -1,5 +1,6 @@
 import sqlite3, uuid, os
 from encryption import encrypt_data, decrypt_data
+from encryption import hash_password, check_password
 DB_FILE = "voting_app.db"
 TOKEN_FILE = "device_token.txt"
 
@@ -29,9 +30,10 @@ def user_exists(username):
     return exists
 
 def save_user(username, password):
+    hashed = hash_password(password)
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, encrypt_data(password)))
+    c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed))
     conn.commit()
     conn.close()
 

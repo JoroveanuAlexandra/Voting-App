@@ -1,6 +1,6 @@
 import sqlite3
 from datetime import datetime
-from encryption import xor_encrypt, xor_decrypt
+from encryption import encrypt_data, decrypt_data
 from db import get_device_token
 import hashlib
 
@@ -29,14 +29,11 @@ def has_voted_today(username):
 
 
 def save_vote(option, username="anonim"):
-    if username == "anonim":
-        identifier = get_device_token()
-    else:
-        identifier = username
-
+    identifier = get_device_token() if username == "anonim" else username
     token = generate_daily_token(identifier)
     today = datetime.now().strftime('%Y-%m-%d')
-    encrypted_vote = xor_encrypt(option)
+
+    encrypted_vote = encrypt_data(option)  
 
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
@@ -51,8 +48,7 @@ def get_vote_counts():
     c.execute("SELECT vote_option FROM votes")
     encrypted_votes = c.fetchall()
     conn.close()
-
-    decrypted_votes = [xor_decrypt(vote[0]) for vote in encrypted_votes]
+    decrypted_votes = [decrypt_data(vote[0]) for vote in encrypted_votes]
 
     return {
         "Option 1": decrypted_votes.count("Option 1"),
