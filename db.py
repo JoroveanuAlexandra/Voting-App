@@ -1,24 +1,32 @@
-import sqlite3, uuid, os
+import sqlite3, uuid
 from encryption import encrypt_data, decrypt_data
 from encryption import hash_password, check_password
+
 DB_FILE = "voting_app.db"
-TOKEN_FILE = "device_token.txt"
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT)''')
     c.execute('''CREATE TABLE IF NOT EXISTS votes (token TEXT, vote_option TEXT, vote_date TEXT)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS device_tokens (token TEXT PRIMARY KEY)''')  # New table for device tokens
     conn.commit()
     conn.close()
 
 def get_device_token():
-    if os.path.exists(TOKEN_FILE):
-        with open(TOKEN_FILE, "r") as file:
-            return file.read()
-    token = str(uuid.uuid4())
-    with open(TOKEN_FILE, "w") as file:
-        file.write(token)
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("SELECT token FROM device_tokens LIMIT 1")
+    row = c.fetchone()
+
+    if row:
+        token = row[0]  
+    else:
+        token = str(uuid.uuid4()) 
+        c.execute("INSERT INTO device_tokens (token) VALUES (?)", (token,))  # Save the new token
+        conn.commit()
+
+    conn.close()
     return token
 
 def user_exists(username):
